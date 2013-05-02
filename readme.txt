@@ -1,4 +1,4 @@
-=== Plugin Name ===
+=== Super Simple Twitter Feed ===
 Contributors: designedbw 
 Tags: Twitter, Feed
 Requires at least: 3.2
