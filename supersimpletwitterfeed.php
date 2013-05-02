@@ -1,13 +1,14 @@
 <?php 
 /*
 Plugin Name: Super Simple Twitter Feed
-Plugin URI: http://www.betterweatherinc.com/sstf
-Description: Gets your latest tweet. This plugin uses Twitter API (V1.1). It uses CURL which needs to be enabled on your server or host environment.
-Author: Betterweather Inc. - Inspired by http://stackoverflow.com/users/695192/rivers
+Plugin URI: http://www.betterweatherinc.com/seed/development/super-simple-twitter-feed/
+Description: Gets your latest tweet. This plugin uses Twitter API (V1.1). It also uses cURL which needs to be enabled on your server or host environment.
+Author: Betterweather Inc.
 Version: 1.0.1
 Author URI: http://www.betterweatherinc.com
 */
 /*  Copyright 2013  Betterweather Inc.  (email : designed@betterweatherinc.com)
+    - Inspired by http://stackoverflow.com/users/695192/rivers
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as 
@@ -275,42 +276,3 @@ function sstf_plugin_menu(){
  * Make Admin Menu Item
  */
 add_action('admin_menu','sstf_plugin_menu');
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
