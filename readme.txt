@@ -11,13 +11,13 @@ Gets your latest tweet. This plugin uses Twitter API (V1.1). It also uses cURL w
 
 == Description ==
 
-Gets your latest tweet. This plugin uses Twitter API (V1.1). It uses cURL which needs to be enabled on your server or host environment.
-We did our best to provide us with something we needed for our site - a simple single latest tweet that was very raw in format (text of 
-the tweet and sometimes formatted HTML anchor tag or link). We thought others might find this useful too - so we decided to contribute 
-it to the Wordpress plugin repository.
+Gets your latest tweet. This plugin uses Twitter API (V1.1). It also uses cURL which needs to be enabled on your server 
+or host environment.We did our best to provide us with something we needed for our site - a simple single latest tweet 
+that was very raw in format (text of the tweet and sometimes formatted HTML anchor tag or link). We thought others might 
+find this useful too - so we decided to contribute it to the Wordpress plugin repository.
 
-We also tried to keep the code concise and clean and in one file on purpose. We didn't think calling something "super simple" warranted 
-PHP classes, include files and CSS and such. We just wanted the tweet!
+We also tried to keep the code concise and clean and in one file on purpose. We didn't think calling 
+something "super simple" warranted PHP classes, include files and CSS and such. We just wanted the tweet!
 
 We use this plugin @ http://www.betterweatherinc.com/seed
 
@@ -25,7 +25,8 @@ We use this plugin @ http://www.betterweatherinc.com/seed
 
 1. Upload `super-simple-twitter-feed/supersimpletwitterfeed.php` to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
-3. Place `<?php echo sstf_gettwitterfeed(); ?>` in your templates
+3. Set Options for Twitter from the `Settings/sstf Settings` Admin Menu Link
+3. Place `<?php echo sstf_gettwitterfeed(); ?>` in your php templates
 4. Place shortcode `[sstfeed]` in your post(s)
 
 == Frequently Asked Questions ==
