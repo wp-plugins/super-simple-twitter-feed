@@ -3,12 +3,11 @@
 Plugin Name: Super Simple Twitter Feed
 Plugin URI: http://www.betterweatherinc.com/sstf
 Description: Gets your latest tweet. This plugin uses Twitter API (V1.1). It uses CURL which needs to be enabled on your server or host environment.
-Author: Betterweather Inc.
-Version: 1.0.1
+Author: Betterweather Inc. - Inspired by http://stackoverflow.com/users/695192/rivers
+Version: 1.0
 Author URI: http://www.betterweatherinc.com
 */
 /*  Copyright 2013  Betterweather Inc.  (email : designed@betterweatherinc.com)
-	Inspired by http://stackoverflow.com/users/695192/rivers
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as 
@@ -200,64 +199,16 @@ function sstf_option_page(){
 					<th scope="row"><label for="sstf_consumer_token_secret">Access Token Secret: </label></th>
 					<td><input type="text" id="sstf_consumer_token_secret" name="sstf_consumer_token_secret" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_token_secret')); ?>" /></td>
 				</tr>
-				<?php
-				/*
-				 * Set up for checking current value
-				 */
-				 $currentCache = trim(esc_attr(get_option('sstf_consumer_twitter_cache_time')));
-				 $cacheTimeArray = array(
-				 	"60*60*.083","60*60*.166","60*60*.25","60*60*.5","60*60*1","60*60*6","60*60*0"
-				 );
-				 $cacheFormArray = array(
-				 	"5 minutes","10 minutes","15 minutes","30 minutes", "1 hour", "6 hours","Do Not Cache (Testing Only!)"
-				 );				 
-				?>
 				<tr class="odd" valign="top">
 					<th scope="row"><label for="sstf_consumer_twitter_cache_time">Twitter Cache Length: </label></th>
-					<td><select id="sstf_consumer_twitter_cache_time" name="sstf_consumer_twitter_cache_time">
-						<?php
-						$i = 0;
-						 foreach($cacheFormArray as &$cacheText){
-						 	if($cacheTimeArray[$i]==$currentCache){
-						 		echo '<option value="'.$cacheTimeArray[$i].'" selected>';
-						 	}
-							else{
-								echo '<option value="'.$cacheTimeArray[$i].'">';
-							}
-							echo $cacheText.'</option>';
-							$i++;
-						 }
-						?>
-						</select>
-						<span class="description">On average, 15 minutes should work well.</span>
+					<td><input type="text" id="sstf_consumer_twitter_cache_time" name="sstf_consumer_twitter_cache_time" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_twitter_cache_time')); ?>" />
+						<span class="description">Example (15 minutes): 60*60*.25 --- 60 seconds * 60 minutes * .25 hours : Set to 0 recommended for testing ONLY</span>
 					</td>
 				</tr>
-				<?php
-				/*
-				 * Set up for checking current value
-				 */
-				 $currentElement = trim(esc_attr(get_option('sstf_consumer_element')));
-				 $elementArray = array(
-				 	"div","p","q","h2","h3","h4","h5"
-				 );				 
-				?>
 				<tr class="even" valign="top">
 					<th scope="row"><label for="sstf_consumer_element">Wrap Your Tweet With HTML: </label></th>
-					<td><select id="sstf_consumer_element" name="sstf_consumer_element">
-						<option value="">Select an HTML Tag  </option>
-						<?php
-							foreach($elementArray as &$value){
-								if($currentElement==$value){
-									echo '<option value="'.$value.'" selected>';	
-								}
-								else {
-									echo '<option value="'.$value.'">';
-								}
-								echo $value.'</option>';
-							}
-						?>
-						</select>
-						<span class="description">This will wrap your tweet with the desired HTML tag.</span>
+					<td><input type="text" id="sstf_consumer_element" name="sstf_consumer_element" value="<?php echo esc_attr(get_option('sstf_consumer_element')); ?>" />
+						<span class="description">Example: div or p or q or h2, h3, h4, h5 (No "<" or ">" Needed it will break the code!")</span>
 					</td>
 				</tr>
 			</table>
@@ -276,3 +227,42 @@ function sstf_plugin_menu(){
  * Make Admin Menu Item
  */
 add_action('admin_menu','sstf_plugin_menu');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
