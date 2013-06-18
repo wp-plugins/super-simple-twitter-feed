@@ -4,7 +4,7 @@ Plugin Name: Super Simple Twitter Feed
 Plugin URI: http://www.betterweatherinc.com/seed/development/super-simple-twitter-feed/
 Description: Gets your latest tweet. This plugin uses Twitter API (V1.1). It also uses cURL which needs to be enabled on your server or host environment.
 Author: Betterweather Inc.
-Version: 1.0.3
+Version: 1.0.4
 Author URI: http://www.betterweatherinc.com
 */
 /*  Copyright 2013  Betterweather Inc.  (email : designed@betterweatherinc.com)
