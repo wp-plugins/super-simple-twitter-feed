@@ -66,5 +66,6 @@ Perhaps.
 
 == Upgrade Notice ==
 
-= 1.0.2 =
-New version utilizes widget for ease of use in themes.
+= 1.0.4 =
+* Fixed bug where cached value would not be overwritten when it should expire 
+* Fixed bug for `Do Not Cache` testing value.
