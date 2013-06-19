@@ -1,0 +1,383 @@
+<?php 
+/*
+Plugin Name: Super Simple Twitter Feed
+Plugin URI: http://www.betterweatherinc.com/seed/development/super-simple-twitter-feed/
+Description: Gets your latest tweet. This plugin uses Twitter API (V1.1). It also uses cURL which needs to be enabled on your server or host environment.
+Author: Betterweather Inc.
+Version: 1.0.5
+Author URI: http://www.betterweatherinc.com
+*/
+/*  Copyright 2013  Betterweather Inc.  (email : designed@betterweatherinc.com)
+    - Inspired by http://stackoverflow.com/users/695192/rivers
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License, version 2, as 
+    published by the Free Software Foundation.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+*/
+/*
+ * Primary function which returns the twitter feed
+ * 
+ * @return string
+ */ 
+function sstf_gettwitterfeed(){
+	global $wp_version;
+	
+	if(!version_compare($wp_version, "3.2", ">=")){
+		die('You must have at least Wordpress Version 3.2 or greater to use the Simple Twitter Feed plugin!');	
+	}
+	
+	/*
+	 * Build and sort the URL variables for Twitter Oauth Request
+	 * 
+	 * @param string $baseURI - URI for Twitter
+	 * @param string $method  - Method (GET or POST) to use when transmitting
+	 * @param array $params   - Required Oauth parameters sent to Twitter
+	 * @return string
+	 */ 
+	function buildBaseString($baseURI, $method, $params) {
+		 $r = array(); 
+		 ksort($params); 
+		 foreach($params as $key=>$value){
+		 	 $r[] = "$key=" . rawurlencode($value); 
+		 } 
+		 return $method."&" . rawurlencode($baseURI) . '&' . rawurlencode(implode('&', $r)); 
+	}
+	
+	/*
+	 * Build the Oauth Header for Twitter
+	 * 
+	 * @param array $oauth - options for header elements
+	 * @return string
+	 */	
+	function buildAuthorizationHeader($oauth) {
+		$r = 'Authorization: OAuth '; 
+		$values = array(); 
+		foreach($oauth as $key=>$value){ 
+			$values[] = "$key=\"" . rawurlencode($value) . "\"";
+		} 
+		$r .= implode(', ', $values); 
+		return $r; 
+	}	
+	
+	/**
+	* Make any URLs in Twitter posts clickable links
+	* 
+	* @param string $string - A string that might contain a URL
+	* @return string
+	*/
+	function makeLink($string){
+		/*** make sure there is an http:// on all URLs ***/
+		$string = preg_replace("/([^\w\/])(www\.[a-z0-9\-]+\.[a-z0-9\-]+)/i", "$1http://$2",$string);
+		/*** make all URLs links ***/
+		$string = preg_replace("/([\w]+:\/\/[\w-?&;#~=\.\/\@]+[\w\/])/i","<a target=\"_blank\" href=\"$1\">$1</A>",$string);
+		/*** make all emails hot links (just in case ;-) ***/
+		$string = preg_replace("/([\w-?&;#~=\.\/]+\@(\[?)[a-zA-Z0-9\-\.]+\.([a-zA-Z]{2,3}|[0-9]{1,3})(\]?))/i","<A HREF=\"mailto:$1\">$1</A>",$string);
+		
+		return $string;
+	}	
+	
+  /*
+	 * Check for Cached Version of Feed
+	 * if not cached, create cache version
+	 */
+	$sstf_transient = get_transient('sstf_cached');
+	if ( !( $sstf_transient ) || (trim(esc_attr(get_option('sstf_consumer_twitter_cache_time')))=='0')){
+		//Remove any Transient Value
+		delete_transient('sstf_cached');
+		
+		//Oauth settings		
+		$url = "https://api.twitter.com/1.1/statuses/user_timeline.json";
+			
+		$consumer = trim(esc_attr(get_option('sstf_consumer_screen_name')));
+		$consumer_key = trim(esc_attr(get_option('sstf_consumer_key')));
+		$consumer_secret = trim(esc_attr(get_option('sstf_consumer_secret'))); 
+		$oauth_access_token = trim(esc_attr(get_option('sstf_consumer_token'))); 
+		$oauth_access_token_secret = trim(esc_attr(get_option('sstf_consumer_token_secret'))); 
+		
+		
+		$oauth = array( 'oauth_consumer_key' => $consumer_key, 'oauth_nonce' => time(), 'oauth_signature_method' => 'HMAC-SHA1', 'oauth_token' => $oauth_access_token, 'oauth_timestamp' => time(), 'oauth_version' => '1.0', 'count' => 1, 'screen_name' => $consumer );
+		
+		$base_info = buildBaseString($url, 'GET', $oauth); 
+		$composite_key = rawurlencode($consumer_secret) . '&' . rawurlencode($oauth_access_token_secret); 
+		$oauth_signature = base64_encode(hash_hmac('sha1', $base_info, $composite_key, true)); 
+		$oauth['oauth_signature'] = $oauth_signature;
+		
+		
+		// Make cURL Request to Twitter 
+		$header = array(buildAuthorizationHeader($oauth), 'Expect:'); 
+		$options = array( 
+			CURLOPT_HTTPHEADER => $header, 
+			CURLOPT_HEADER => false, 
+			CURLOPT_URL => $url . '?screen_name='.$consumer.'&count=1', 
+			CURLOPT_RETURNTRANSFER => true, 
+			CURLOPT_SSL_VERIFYPEER => false
+			);
+		
+		$feed = curl_init(); 
+		curl_setopt_array($feed, $options); 
+		$json = curl_exec($feed); 
+		curl_close($feed);
+			
+		$twitter_data = json_decode($json, true);
+		
+		//format, cache and return the feed
+		$sstfTweet = makeLink($twitter_data[0]['text']);
+		$sstfElement = trim(esc_attr(get_option('sstf_consumer_element')));
+		if($sstfElement){
+			$sstfTweet = "<".$sstfElement." class=\"sstfeed\">".$sstfTweet."</".$sstfElement.">";	
+		}	 
+		
+		$sstf_cache_time = intval(trim(esc_attr(get_option('sstf_consumer_twitter_cache_time'))));
+		if($sstf_cache_time==null){
+			$sstf_cache_time = 900;
+		}
+		set_transient('sstf_cached', $sstfTweet, $sstf_cache_time);
+		return get_transient('sstf_cached');
+	}
+	else {
+		return $sstf_transient;
+	}
+
+}
+function sstf_ShortCode(){
+	$sstf_transient = get_transient('sstf_cached');
+	if ( empty( $sstf_transient ) ){
+		return sstf_gettwitterfeed();
+	}
+	else {
+		return $sstf_transient;
+	}	
+}
+add_shortcode('sstfeed','sstf_ShortCode');
+
+/*
+ * Begin Wordpress Admin Section
+ */
+ 
+/*
+ * Register Twitter Specific Options
+ */
+
+function sstf_init(){
+	register_setting('sstf_options','sstf_consumer_screen_name');//todo - add sanitization function ", 'functionName'"
+	register_setting('sstf_options','sstf_consumer_key');
+	register_setting('sstf_options','sstf_consumer_secret');
+	register_setting('sstf_options','sstf_consumer_token');
+	register_setting('sstf_options','sstf_consumer_token_secret');
+	register_setting('sstf_options','sstf_consumer_element');
+	register_setting('sstf_options','sstf_consumer_twitter_cache_time');
+} 
+add_action('admin_init','sstf_init');
+
+/*
+ * Display the Options form for Simple Twitter Feed
+ */
+function sstf_option_page(){
+	?>
+	<div class="wrap">
+		<?php screen_icon(); ?>
+		<h2>Super Simple Twitter Feed Options</h2>
+		<p>Here you can set or edit the fields needed for the plugin.</p>
+		<p>You can find these settings here: <a href="https://dev.twitter.com/apps" target="_blank">Twitter API</a></p>
+		<form action="options.php" method="post" id="sstf-options-form">
+			<?php settings_fields('sstf_options'); ?>
+			<table class="form-table">
+				<tr class="even" valign="top">
+					<th scope="row"><label for="sstf_consumer_screen_name">Twitter Screen Name: </label></th>				
+					<td><input type="text" id="sstf_consumer_screen_name" name="sstf_consumer_screen_name" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_screen_name')); ?>" />
+						<p class="description">(Without the "@" symbol)</p>
+					</td>
+				</tr>
+				<tr class="odd" valign="top">
+					<th scope="row"><label for="sstf_consumer_key">Consumer Key: </label></th>				
+					<td><input type="text" id="sstf_consumer_key" name="sstf_consumer_key" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_key')); ?>" />
+						<p></p>
+					</td>
+				</tr>
+				<tr class="even" valign="top">
+					<th scope="row"><label for="sstf_consumer_secret">Consumer Secret: </label></th>
+					<td><input type="text" id="sstf_consumer_secret" name="sstf_consumer_secret" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_secret')); ?>" />
+						<p></p>
+					</td>
+				</tr>
+				<tr class="odd" valign="top">
+					<th scope="row"><label for="sstf_consumer_token">Access Token: </label></th>
+					<td><input type="text" id="sstf_consumer_token" name="sstf_consumer_token" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_token')); ?>" />
+						<p></p>
+					</td>
+				</tr>
+				<tr class="even" valign="top">
+					<th scope="row"><label for="sstf_consumer_token_secret">Access Token Secret: </label></th>
+					<td><input type="text" id="sstf_consumer_token_secret" name="sstf_consumer_token_secret" class="regular-text" value="<?php echo esc_attr(get_option('sstf_consumer_token_secret')); ?>" />
+						<p></p>
+					</td>
+				</tr>
+				<?php
+				/*
+				 * Set up for checking current value
+				 */
+				 $currentCache = trim(esc_attr(get_option('sstf_consumer_twitter_cache_time')));
+				 $cacheTimeArray = array(
+				 	"300","600","900","1800","3600","21600","0"
+				 );
+				 $cacheFormArray = array(
+				 	"5 minutes","10 minutes","15 minutes","30 minutes", "1 hour", "6 hours","Do Not Cache (Testing Only!)"
+				 );				 
+				?>
+				<tr class="odd" valign="top">
+					<th scope="row"><label for="sstf_consumer_twitter_cache_time">Twitter Cache Length: </label></th>
+					<td><select id="sstf_consumer_twitter_cache_time" name="sstf_consumer_twitter_cache_time">
+						<?php
+						$i = 0;
+						 foreach($cacheFormArray as &$cacheText){
+						 	if($cacheTimeArray[$i]==$currentCache){
+						 		echo '<option value="'.$cacheTimeArray[$i].'" selected>';
+						 	}
+							else{
+								echo '<option value="'.$cacheTimeArray[$i].'">';
+							}
+							echo $cacheText.'</option>';
+							$i++;
+						 }
+						?>
+						</select>
+						<p class="description">On average, 15 minutes should work well.</p>
+					</td>
+				</tr>
+				<?php
+				/*
+				 * Set up for checking current value
+				 */
+				 $currentElement = trim(esc_attr(get_option('sstf_consumer_element')));
+				 $elementArray = array(
+				 	"div","p","q","h2","h3","h4","h5"
+				 );				 
+				?>
+				<tr class="even" valign="top">
+					<th scope="row"><label for="sstf_consumer_element">Wrap Your Tweet With HTML: </label></th>
+					<td><select id="sstf_consumer_element" name="sstf_consumer_element">
+						<option value="">Select an HTML Tag  </option>
+						<?php
+							foreach($elementArray as &$value){
+								if($currentElement==$value){
+									echo '<option value="'.$value.'" selected>';	
+								}
+								else {
+									echo '<option value="'.$value.'">';
+								}
+								echo $value.'</option>';
+							}
+						?>
+						</select>
+						<p class="description">This will wrap your tweet with the desired HTML tag.</p>
+					</td>
+				</tr>
+			</table>
+			<p class="submit"><input type="submit" name="submit" class="button-primary" value="Save Settings" /></p>			
+		</form>
+	</div>
+	<?php
+}
+
+/*
+ * Setup Admin menu item
+ */
+function sstf_plugin_menu(){
+	add_options_page('Super Simple Twitter Settings','sstf Settings','manage_options','sstf-plugin','sstf_option_page');
+}
+
+/*
+ * Make Admin Menu Item
+ */
+add_action('admin_menu','sstf_plugin_menu');
+
+/*
+ * SSTF Widget
+ * enables the ability to use a widget to place the tweet feed in the widget areas 
+ * of a theme.
+ */
+ class sstfWidget extends WP_Widget
+ {
+ 		
+ 	/*
+	 * Register the widget for use in WordPress
+	 */ 
+ 	public function sstfWidget()
+ 	{
+ 		$widget_options = array(
+			'classname' => 'sstf_widget',
+			'description' => 'Super Simple Twitter Feed Widget, Displays your latest Tweet'
+		);
+		parent::WP_Widget('sstf_widget','sstf Widget',$widget_options);
+ 	}
+	
+	/*
+	 * widget handles the front end display of widget title
+	 * 
+	 * @param array $args - arguments from the theme (html berfore and after the widget)
+	 * @param array $instance - holds saved values from database
+	 */
+	public function widget($args, $instance)
+	{
+		extract($args, EXTR_SKIP);	
+		$title = ($instance['title']) ? $instance['title'] : '';
+		$body = sstf_ShortCode();	
+		?>
+		<?php 
+			echo $before_widget;
+			if($title){
+				 echo $before_title . $title . $after_title; 
+			} 
+			echo $body; 
+			echo $after_widget; 
+		?>
+		<?php
+	}
+	
+	/*
+	 * No current need to override the WP_Widget class function
+	 * 
+	 * public function update(){}
+	 */
+	
+	/*
+	 * Admin form for widget
+	 * 
+	 * @param array $instance - previously saved values from the database
+	 */ 
+	public function form($instance)
+	{
+		?>
+		<label for="<?php echo $this->get_field_id('title'); ?>">
+			Title:
+		<input id="<?php echo $this->get_field_id('title'); ?>" name="<?php echo $this->get_field_name('title'); ?>" value="<?php echo esc_attr($instance['title']); ?>" class="widefat" />
+		<p class="description">Leave blank for no tweet title.</p>
+		</label>
+		
+		<?php
+		
+	}
+				
+ }
+ 
+ /*
+  * Register the sstfWidget widget
+  */
+function sstf_widget_init()
+{
+	register_widget('sstfWidget');
+}
+add_action('widgets_init', 'sstf_widget_init');
+ 
+ 
+
+
