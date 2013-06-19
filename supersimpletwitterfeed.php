@@ -133,7 +133,7 @@ function sstf_gettwitterfeed(){
 		$sstfTweet = makeLink($twitter_data[0]['text']);
 		$sstfElement = trim(esc_attr(get_option('sstf_consumer_element')));
 		if($sstfElement){
-			$sstfTweet = "<".$sstfElement." class=\"sstfeed\">cached ".$sstfTweet."</".$sstfElement.">";	
+			$sstfTweet = "<".$sstfElement." class=\"sstfeed\">".$sstfTweet."</".$sstfElement.">";	
 		}	 
 		
 		$sstf_cache_time = intval(trim(esc_attr(get_option('sstf_consumer_twitter_cache_time'))));
