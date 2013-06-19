@@ -3,9 +3,10 @@ Contributors: designedbw
 Tags: Twitter, Feed
 Requires at least: 3.2
 Tested up to: 3.2
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
+
 
 Gets your latest tweet. This plugin uses Twitter API (V1.1). It also uses cURL which needs to be enabled on your server.
 
